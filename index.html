@@ -8,8 +8,9 @@
 body {
   margin: 0;
   font-family: 'Georgia', serif;
-  background: linear-gradient(135deg, #fff5f0, #ffe4e1);
+  background: linear-gradient(135deg, #fff1eb, #ace0f9);
   text-align: center;
+  overflow: hidden;
 }
 
 /* Screens */
@@ -24,37 +25,58 @@ body {
   display: flex;
 }
 
-/* Button */
-button {
-  padding: 14px 28px;
-  font-size: 18px;
+/* Envelope */
+.envelope {
+  width: 200px;
+  height: 120px;
   background: #b22222;
-  color: white;
-  border: none;
-  border-radius: 30px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  position: relative;
+  border-radius: 10px;
+}
+.flap {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 100px solid transparent;
+  border-right: 100px solid transparent;
+  border-bottom: 60px solid #8b0000;
+  top: -60px;
+  transition: 0.6s;
+}
+.open .flap {
+  transform: rotateX(180deg);
 }
 
-/* Invite Card */
+/* Card */
 .card {
   background: white;
   padding: 25px;
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   width: 300px;
+}
+
+/* Buttons */
+button {
+  padding: 12px 24px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 25px;
+  background: #b22222;
+  color: white;
+  font-size: 16px;
 }
 
 /* Canvas */
 canvas {
   margin-top: 15px;
-  border-radius: 15px;
+  border-radius: 10px;
 }
 
-/* Hidden text */
+/* Hidden Text */
 #hiddenText {
   display: none;
   margin-top: 15px;
-  font-size: 18px;
   color: #8b0000;
   line-height: 1.6;
 }
@@ -65,8 +87,10 @@ canvas {
 
 <!-- SCREEN 1 -->
 <div id="screen1" class="screen active">
-  <h1>💌 You're Invited</h1>
-  <button onclick="openInvite()">Tap to Open</button>
+  <div class="envelope" onclick="openEnvelope(this)">
+    <div class="flap"></div>
+  </div>
+  <p>Tap Envelope 💌</p>
 </div>
 
 <!-- SCREEN 2 -->
@@ -79,54 +103,60 @@ canvas {
       <strong>Kavya ❤️ Partner</strong><br>
       25th December 2026<br>
       Save the Date 💫
+      
+      <br><br>
+
+      <button onclick="openMap()">📍 Location</button>
+      <button onclick="rsvp()">📝 RSVP</button>
     </div>
   </div>
 </div>
 
+<!-- MUSIC -->
+<audio id="music" src="https://www.bensound.com/bensound-music/bensound-romantic.mp3"></audio>
+
 <script>
-function openInvite() {
-  document.getElementById("screen1").classList.remove("active");
-  document.getElementById("screen2").classList.add("active");
+function openEnvelope(el){
+  el.classList.add("open");
+  document.getElementById("music").play();
+
+  setTimeout(()=>{
+    document.getElementById("screen1").classList.remove("active");
+    document.getElementById("screen2").classList.add("active");
+  },800);
 }
 
+// Scratch logic
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// Create smooth gradient overlay
-let gradient = ctx.createLinearGradient(0,0,260,120);
-gradient.addColorStop(0,"#c0c0c0");
-gradient.addColorStop(1,"#999999");
-
-ctx.fillStyle = gradient;
+ctx.fillStyle = "#999";
 ctx.fillRect(0,0,canvas.width,canvas.height);
 
-// Brush settings
 ctx.globalCompositeOperation = "destination-out";
 
-let isDrawing = false;
+let drawing = false;
 
-function start(e){
-  isDrawing = true;
+function getXY(e){
+  let rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.touches ? e.touches[0].clientX : e.clientX) - rect.left,
+    y: (e.touches ? e.touches[0].clientY : e.clientY) - rect.top
+  };
 }
 
-function stop(){
-  isDrawing = false;
-  checkReveal();
-}
+function start(){ drawing = true; }
+function stop(){ drawing = false; check(); }
 
 function draw(e){
-  if(!isDrawing) return;
-
-  let rect = canvas.getBoundingClientRect();
-  let x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-  let y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  if(!drawing) return;
+  let pos = getXY(e);
 
   ctx.beginPath();
-  ctx.arc(x,y,20,0,Math.PI*2);
+  ctx.arc(pos.x,pos.y,20,0,Math.PI*2);
   ctx.fill();
 }
 
-// Events (mobile + desktop)
 canvas.addEventListener("mousedown", start);
 canvas.addEventListener("mouseup", stop);
 canvas.addEventListener("mousemove", draw);
@@ -135,8 +165,7 @@ canvas.addEventListener("touchstart", start);
 canvas.addEventListener("touchend", stop);
 canvas.addEventListener("touchmove", draw);
 
-// Reveal detection
-function checkReveal(){
+function check(){
   let pixels = ctx.getImageData(0,0,canvas.width,canvas.height);
   let count = 0;
 
@@ -144,11 +173,18 @@ function checkReveal(){
     if(pixels.data[i] === 0) count++;
   }
 
-  let percent = count / (canvas.width * canvas.height);
-
-  if(percent > 0.35){
+  if(count > pixels.data.length * 0.25){
     document.getElementById("hiddenText").style.display = "block";
   }
+}
+
+// Buttons
+function openMap(){
+  window.open("https://maps.google.com", "_blank");
+}
+
+function rsvp(){
+  window.open("https://forms.gle", "_blank");
 }
 </script>
 
