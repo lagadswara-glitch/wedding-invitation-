@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invitation</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Georgia', serif;
+  text-align: center;
+  background: #fdf6f0;
+}
+
+.screen {
+  display: none;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.active {
+  display: flex;
+}
+
+button {
+  padding: 12px 24px;
+  font-size: 18px;
+  border: none;
+  background: #8b0000;
+  color: white;
+  border-radius: 8px;
+}
+
+canvas {
+  margin-top: 20px;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Screen 1 -->
+<div id="screen1" class="screen active">
+  <h1>💌 You’re Invited</h1>
+  <button onclick="openInvite()">Tap to Open</button>
+</div>
+
+<!-- Screen 2 -->
+<div id="screen2" class="screen">
+  <h2>Scratch to Reveal</h2>
+  <canvas id="scratch" width="300" height="150"></canvas>
+  <p id="hiddenText" style="display:none;">
+    Kavya ❤️ Partner<br>
+    25th Dec 2026<br>
+    Save the Date ✨
+  </p>
+</div>
+
+<script>
+function openInvite() {
+  document.getElementById("screen1").classList.remove("active");
+  document.getElementById("screen2").classList.add("active");
+}
+
+const canvas = document.getElementById("scratch");
+const ctx = canvas.getContext("2d");
+
+ctx.fillStyle = "#999";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+let isDrawing = false;
+
+canvas.addEventListener("touchstart", () => isDrawing = true);
+canvas.addEventListener("touchend", () => isDrawing = false);
+canvas.addEventListener("touchmove", scratch);
+
+function scratch(e) {
+  if (!isDrawing) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = e.touches[0].clientX - rect.left;
+  const y = e.touches[0].clientY - rect.top;
+
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.arc(x, y, 15, 0, Math.PI * 2);
+  ctx.fill();
+
+  checkReveal();
+}
+
+function checkReveal() {
+  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let transparent = 0;
+
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    if (pixels.data[i + 3] === 0) transparent++;
+  }
+
+  if (transparent > pixels.data.length / 4) {
+    document.getElementById("hiddenText").style.display = "block";
+  }
+}
+</script>
+
+</body>
+</html>
