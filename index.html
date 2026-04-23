@@ -1,17 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invitation</title>
+<title>Wedding Invite</title>
 
 <style>
 body {
   margin: 0;
   font-family: 'Georgia', serif;
+  background: linear-gradient(135deg, #fff5f0, #ffe4e1);
   text-align: center;
-  background: #fdf6f0;
 }
 
+/* Screens */
 .screen {
   display: none;
   height: 100vh;
@@ -19,44 +20,67 @@ body {
   align-items: center;
   flex-direction: column;
 }
-
 .active {
   display: flex;
 }
 
+/* Button */
 button {
-  padding: 12px 24px;
+  padding: 14px 28px;
   font-size: 18px;
-  border: none;
-  background: #8b0000;
+  background: #b22222;
   color: white;
-  border-radius: 8px;
+  border: none;
+  border-radius: 30px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
+/* Invite Card */
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  width: 300px;
+}
+
+/* Canvas */
 canvas {
-  margin-top: 20px;
-  border-radius: 10px;
+  margin-top: 15px;
+  border-radius: 15px;
+}
+
+/* Hidden text */
+#hiddenText {
+  display: none;
+  margin-top: 15px;
+  font-size: 18px;
+  color: #8b0000;
+  line-height: 1.6;
 }
 </style>
 </head>
 
 <body>
 
-<!-- Screen 1 -->
+<!-- SCREEN 1 -->
 <div id="screen1" class="screen active">
-  <h1>💌 You’re Invited</h1>
+  <h1>💌 You're Invited</h1>
   <button onclick="openInvite()">Tap to Open</button>
 </div>
 
-<!-- Screen 2 -->
+<!-- SCREEN 2 -->
 <div id="screen2" class="screen">
-  <h2>Scratch to Reveal</h2>
-  <canvas id="scratch" width="300" height="150"></canvas>
-  <p id="hiddenText" style="display;">
-    xyz ❤️ abc<br>
-    25th Dec 2026<br>
-    Save the Date ✨
-  </p>
+  <div class="card">
+    <h3>Scratch to Reveal ✨</h3>
+    <canvas id="canvas" width="260" height="120"></canvas>
+
+    <div id="hiddenText">
+      <strong>Kavya ❤️ Partner</strong><br>
+      25th December 2026<br>
+      Save the Date 💫
+    </div>
+  </div>
 </div>
 
 <script>
@@ -65,42 +89,64 @@ function openInvite() {
   document.getElementById("screen2").classList.add("active");
 }
 
-const canvas = document.getElementById("scratch");
+const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-ctx.fillStyle = "#999";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
+// Create smooth gradient overlay
+let gradient = ctx.createLinearGradient(0,0,260,120);
+gradient.addColorStop(0,"#c0c0c0");
+gradient.addColorStop(1,"#999999");
+
+ctx.fillStyle = gradient;
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+// Brush settings
+ctx.globalCompositeOperation = "destination-out";
 
 let isDrawing = false;
 
-canvas.addEventListener("touchstart", () => isDrawing = true);
-canvas.addEventListener("touchend", () => isDrawing = false);
-canvas.addEventListener("touchmove", scratch);
+function start(e){
+  isDrawing = true;
+}
 
-function scratch(e) {
-  if (!isDrawing) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const x = e.touches[0].clientX - rect.left;
-  const y = e.touches[0].clientY - rect.top;
-
-  ctx.globalCompositeOperation = "destination-out";
-  ctx.beginPath();
-  ctx.arc(x, y, 15, 0, Math.PI * 2);
-  ctx.fill();
-
+function stop(){
+  isDrawing = false;
   checkReveal();
 }
 
-function checkReveal() {
-  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  let transparent = 0;
+function draw(e){
+  if(!isDrawing) return;
 
-  for (let i = 0; i < pixels.data.length; i += 4) {
-    if (pixels.data[i + 3] === 0) transparent++;
+  let rect = canvas.getBoundingClientRect();
+  let x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  let y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+  ctx.beginPath();
+  ctx.arc(x,y,20,0,Math.PI*2);
+  ctx.fill();
+}
+
+// Events (mobile + desktop)
+canvas.addEventListener("mousedown", start);
+canvas.addEventListener("mouseup", stop);
+canvas.addEventListener("mousemove", draw);
+
+canvas.addEventListener("touchstart", start);
+canvas.addEventListener("touchend", stop);
+canvas.addEventListener("touchmove", draw);
+
+// Reveal detection
+function checkReveal(){
+  let pixels = ctx.getImageData(0,0,canvas.width,canvas.height);
+  let count = 0;
+
+  for(let i=3;i<pixels.data.length;i+=4){
+    if(pixels.data[i] === 0) count++;
   }
 
-  if (transparent > pixels.data.length / 4) {
+  let percent = count / (canvas.width * canvas.height);
+
+  if(percent > 0.35){
     document.getElementById("hiddenText").style.display = "block";
   }
 }
